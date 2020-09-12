@@ -1,9 +1,16 @@
 <phpunit>
     <testsuites>
-        <testsuite name="ImageUpload">
-            <directory>C:\Users\gutoc\Documents\www\image-upload\tests\TestCase\Filename\*Test.php</directory>
-            <directory>.\TestCase\Resizer\*Test.php</directory>
-            <directory>.\TestCase\Utils\*Test.php</directory>
+        <testsuite name="AllTests">
+            <directory>.</directory>
+        </testsuite>
+        <testsuite name="Filename">
+            <directory>./TestCase/Lib/Filename</directory>
+        </testsuite>
+        <testsuite name="Resizer">
+            <directory>./TestCase/Lib/Resizer</directory>
+        </testsuite>
+        <testsuite name="Utils">
+            <directory>./TestCase/Lib/Utils</directory>
         </testsuite>
     </testsuites>
 </phpunit>

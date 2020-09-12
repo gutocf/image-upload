@@ -5,5 +5,14 @@ Image upload plugin for CakePHP 4.
  - PHP 7.2
  - CakePHP 4.1.+
 
-## Instalation
+## Installation
     composer require gutocf/image-upload
+
+## Configuration
+@todo
+
+## Usage
+@todo
+
+## Example
+@todo

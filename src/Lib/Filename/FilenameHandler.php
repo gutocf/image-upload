@@ -3,7 +3,7 @@
 namespace Gutocf\ImageUpload\Lib\Filename;
 
 use const DS;
-use Gutocf\ImageUpload\Lib\Text\Text;
+use Gutocf\ImageUpload\Lib\Utils\Text;
 
 abstract class FilenameHandler {
 

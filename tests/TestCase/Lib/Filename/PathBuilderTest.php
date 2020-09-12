@@ -18,16 +18,16 @@ class PathBuilderTest extends TestCase {
 
 	public function testExistentFile() {
 		$config = [
-			'baseDir' => TEST_ROOT . 'tests\TestCase\Lib\ImageUpload',
+			'baseDir' => TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib',
 			'dir' => 'img{DS}{model}{DS}{field}',
 			'filename' => '{slug}.{ext}',
 		];
 		$this->pathBuilder = PathBuilder::getInstance('fieldname', 'Foto Florianópolis.jpg', 'model', $config);
-		$baseDir = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\\';
-		$absolutePath = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\foto-florianopolis-0.jpg';
-		$thumbnailAbsolutePath = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\thumb\foto-florianopolis-0.jpg';
-		$dir = '\img\model\fieldname\\';
-		$dirname = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\\';
+		$baseDir = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' .  DS;
+		$absolutePath = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' .  DS . 'img' . DS . 'model' . DS . 'fieldname' . DS . 'foto-florianopolis-0.jpg';
+		$thumbnailAbsolutePath = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' .  DS . 'img' . DS . 'model' . DS . 'fieldname' . DS . 'thumb' . DS . 'foto-florianopolis-0.jpg';
+		$dir = DS . 'img' . DS . 'model' . DS . 'fieldname' . DS;
+		$dirname = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' .  DS . 'img' . DS . 'model' . DS . 'fieldname' . DS;
 		$filename = 'foto-florianopolis-0.jpg';
 		$this->assertEquals($baseDir, $this->pathBuilder->baseDir());
 		$this->assertEquals($absolutePath, $this->pathBuilder->absolutePath());
@@ -39,16 +39,16 @@ class PathBuilderTest extends TestCase {
 
 	public function testNonExistentFile() {
 		$config = [
-			'baseDir' => TEST_ROOT . 'tests\TestCase\Lib\ImageUpload',
+			'baseDir' => TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib',
 			'dir' => 'img{DS}{model}{DS}{field}',
 			'filename' => '{slug}.{ext}',
 		];
 		$this->pathBuilder = PathBuilder::getInstance('fieldname', 'Foto Palhoça.jpg', 'model', $config);
-		$baseDir = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\\';
-		$absolutePath = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\foto-palhoca.jpg';
-		$thumbnailAbsolutePath = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\thumb\foto-palhoca.jpg';
-		$dir = '\img\model\fieldname\\';
-		$dirname = TEST_ROOT . 'tests\TestCase\Lib\ImageUpload\img\model\fieldname\\';
+		$baseDir = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' .  DS;
+		$absolutePath = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib'  . DS . 'img' . DS . 'model' . DS . 'fieldname' . DS . 'foto-palhoca.jpg';
+		$thumbnailAbsolutePath = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib'  . DS . 'img' . DS . 'model' . DS . 'fieldname' . DS . 'thumb' . DS . 'foto-palhoca.jpg';
+		$dir = '' . DS . 'img' . DS . 'model' . DS . 'fieldname' . DS;
+		$dirname = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'img' . DS . 'model' . DS . 'fieldname' . DS;
 		$filename = 'foto-palhoca.jpg';
 		$this->assertEquals($baseDir, $this->pathBuilder->baseDir());
 		$this->assertEquals($absolutePath, $this->pathBuilder->absolutePath());

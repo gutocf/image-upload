@@ -1,6 +1,6 @@
 <?php
 
-namespace Gutocf\ImageUpload\Lib\Text;
+namespace Gutocf\ImageUpload\Lib\Utils;
 
 abstract class Text {
 

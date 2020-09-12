@@ -8,8 +8,9 @@ use Cake\TestSuite\TestCase;
 class FilenameHandlerTest extends TestCase {
 
 	public function testSuffix() {
-		$actual = FilenameHandler::applyNumericSuffix(TEST_ROOT . 'TestCase\Lib\ImageUpload\Resizer\image_resizer_test.png');
-		$expected = TEST_ROOT . 'TestCase\Lib\ImageUpload\Resizer\image_resizer_test-0.png';
+		$filename = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'Resizer' . DS . 'image_resizer_test.png';
+		$expected = TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'Resizer' . DS . 'image_resizer_test-0.png';
+		$actual = FilenameHandler::applyNumericSuffix($filename);
 		$this->assertEquals($expected, $actual);
 	}
 }
