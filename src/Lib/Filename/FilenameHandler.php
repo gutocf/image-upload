@@ -1,21 +1,19 @@
 <?php
 
-	 namespace App\Lib\ImageUpload\Filename;
+namespace Gutocf\ImageUpload\Lib\Filename;
 
-	 use App\Lib\ImageUpload\Utils\Text;
-	 use const DS;
+use const DS;
+use Gutocf\ImageUpload\Lib\Text\Text;
 
-	 abstract class FilenameHandler {
+abstract class FilenameHandler {
 
-		 public static function applyNumericSuffix(string $absolutePath) {
-			 while (file_exists($absolutePath)) {
-				 $dirname = pathinfo($absolutePath, PATHINFO_DIRNAME);
-				 $filename = Text::incNumericSuffix(pathinfo($absolutePath, PATHINFO_FILENAME));
-				 $extension = pathinfo($absolutePath, PATHINFO_EXTENSION);
-				 $absolutePath = $dirname . DS . $filename . '.' . $extension;
-			 }
-			 return $absolutePath;
-		 }
-
-	 }
-	 
+	public static function applyNumericSuffix(string $absolutePath) {
+		while (file_exists($absolutePath)) {
+			$dirname = pathinfo($absolutePath, PATHINFO_DIRNAME);
+			$filename = Text::incNumericSuffix(pathinfo($absolutePath, PATHINFO_FILENAME));
+			$extension = pathinfo($absolutePath, PATHINFO_EXTENSION);
+			$absolutePath = $dirname . DS . $filename . '.' . $extension;
+		}
+		return $absolutePath;
+	}
+}

@@ -1,17 +1,15 @@
 <?php
 
-	 namespace App\Test\TestCase\Lib\ImageUpload\Filename;
+namespace Gutocf\Test\TestCase\Lib\Filename;
 
-	 use App\Lib\ImageUpload\Filename\FilenameHandler;
-	 use Cake\TestSuite\TestCase;
+use Gutocf\ImageUpload\Lib\Filename\FilenameHandler;
+use Cake\TestSuite\TestCase;
 
-	 class FilenameHandlerTest extends TestCase {
+class FilenameHandlerTest extends TestCase {
 
-		 public function testSuffix() {
-			 $actual = FilenameHandler::applyNumericSuffix('C:\Users\gutoc\Documents\www\www.galerianc.com.br\tests\TestCase\Lib\ImageUpload\Resizer\image_resizer_test.png');
-			 $expected = 'C:\Users\gutoc\Documents\www\www.galerianc.com.br\tests\TestCase\Lib\ImageUpload\Resizer\image_resizer_test-0.png';
-			 $this->assertEquals($expected, $actual);
-		 }
-
-	 }
-	 
+	public function testSuffix() {
+		$actual = FilenameHandler::applyNumericSuffix(TEST_ROOT . 'TestCase\Lib\ImageUpload\Resizer\image_resizer_test.png');
+		$expected = TEST_ROOT . 'TestCase\Lib\ImageUpload\Resizer\image_resizer_test-0.png';
+		$this->assertEquals($expected, $actual);
+	}
+}

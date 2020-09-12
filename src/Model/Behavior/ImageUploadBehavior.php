@@ -1,13 +1,13 @@
 <?php
 
-	 namespace App\Model\Behavior;
+	 namespace Gutocf\ImageUpload\Model\Behavior;
 
-	 use App\Lib\ImageUpload\Filename\FilenameHandler;
-	 use App\Lib\ImageUpload\Filename\PathBuilder;
-	 use App\Lib\ImageUpload\Filename\PathProcessor;
-	 use App\Lib\ImageUpload\Resizer\ImageResizer;
-	 use App\Lib\ImageUpload\Utils\Text;
-	 use App\Lib\ImageUpload\Validator\ImageValidator;
+	 use Gutocf\ImageUpload\Lib\Filename\FilenameHandler;
+	 use Gutocf\ImageUpload\Lib\Filename\PathBuilder;
+	 use Gutocf\ImageUpload\Lib\Filename\PathProcessor;
+	 use Gutocf\ImageUpload\Lib\Resizer\ImageResizer;
+	 use Gutocf\ImageUpload\Lib\Utils\Text;
+	 use Gutocf\ImageUpload\Lib\Validator\ImageValidator;
 	 use ArrayObject;
 	 use Cake\Datasource\EntityInterface;
 	 use Cake\Event\EventInterface;

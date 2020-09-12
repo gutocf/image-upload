@@ -1,0 +1,9 @@
+<phpunit>
+    <testsuites>
+        <testsuite name="ImageUpload">
+            <directory>C:\Users\gutoc\Documents\www\image-upload\tests\TestCase\Filename\*Test.php</directory>
+            <directory>.\TestCase\Resizer\*Test.php</directory>
+            <directory>.\TestCase\Utils\*Test.php</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
