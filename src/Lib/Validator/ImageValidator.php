@@ -37,7 +37,7 @@ class ImageValidator {
 
 	private function addUploadedFileRule(string $field) {
 		$message = 'Selecione um arquivo';
-		$when = $this->getConfig('optional') ? Validator::WHEN_CREATE : Validator::WHEN_UPDATE;
+		$when = $this->getConfig('optional') ? true : Validator::WHEN_UPDATE;
 		$this->validator->allowEmptyFile($field, $message, $when);
 	}
 
