@@ -45,7 +45,7 @@ class ImageResizer {
 			$resizeH = $height;
 			$start = new Point(round(($resizeW - $width) / 2), 0);
 		} else {
-			$resizeW = $width * $imageRatio;
+			$resizeW = $width / $imageRatio;
 			$resizeH = $width;
 			$start = new Point(0, round(($resizeH - $height) / 2));
 		}
