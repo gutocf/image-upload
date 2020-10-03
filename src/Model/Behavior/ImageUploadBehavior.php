@@ -23,7 +23,7 @@ use const WWW_ROOT;
  */
 class ImageUploadBehavior extends Behavior {
 
-	private $_defaultConfigField = [
+	protected $_defaultConfigField = [
 		'baseDir' => WWW_ROOT,
 		'dir' => 'img',
 		'filename' => '{slug}.{ext}',
@@ -33,11 +33,13 @@ class ImageUploadBehavior extends Behavior {
 		'thumbnails' => [],
 	];
 
-	private const fieldFileSuffix = 'file';
+	protected const fieldFileSuffix = 'file';
 
-	private $ImageValidator;
+	protected const fieldRemoveSuffix = 'remove';
 
-	private $ImageResizer;
+	protected $ImageValidator;
+
+	protected $ImageResizer;
 
 	public function initialize(array $config): void {
 		foreach (array_keys($config) as $field) {
@@ -64,7 +66,7 @@ class ImageUploadBehavior extends Behavior {
 
 	public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options) {
 		foreach ($this->getFieldList() as $field) {
-			$this->saveFile($entity, $field);
+			$this->saveOrRemoveFiles($entity, $field);
 		}
 	}
 
@@ -74,30 +76,62 @@ class ImageUploadBehavior extends Behavior {
 		}
 	}
 
-	private function saveFile(EntityInterface $entity, string $field) {
-		$field_file = Text::suffix($field, self::fieldFileSuffix);
-		$uploadedFile = $entity->get($field_file);
-		if ($entity->isDirty($field_file) && $uploadedFile->getError() === 0) {
-			if (!$entity->isNew()) {
-				$this->deleteFiles($entity, $field);
-			}
-			$pathBuilder = $this->getPathBuilder($field, $uploadedFile->getClientFilename());
-			$entity->set([
-				$field => $pathBuilder->filename(),
-				Text::suffix($field, 'path') => $pathBuilder->dir(),
-			]);
-			$this->moveUploadedFile($uploadedFile, $pathBuilder->absolutePath());
-			$this->createThumbnails($pathBuilder, $field);
+	protected function saveOrRemoveFiles(EntityInterface $entity, string $field) {
+		if ($this->hasUploadedFile($entity, $field)) {
+			$this->saveFile($entity, $field);
+		} elseif ($this->isMarkedForRemoval($entity, $field)) {
+			$this->removeFile($entity, $field);
 		}
 	}
 
-	private function moveUploadedFile(UploadedFile $uploadedFile, string $absolutePath): void {
+	private function removeFile(EntityInterface $entity, string $field) {
+		$field_file = Text::suffix($field, self::fieldFileSuffix);
+		$field_path = Text::suffix($field, 'path');
+		$this->deleteFiles($entity, $field);
+		$entity->set([
+			$field => null,
+			$field_file => null,
+			$field_path => null,
+		]);
+	}
+
+	protected function isMarkedForRemoval(EntityInterface $entity, string $field): bool {
+		$field_delete = Text::suffix($field, self::fieldRemoveSuffix);
+		return isset($entity->$field_delete) && $entity->$field_delete;
+	}
+
+	protected function hasUploadedFile(EntityInterface $entity, string $field): bool {
+		$uploadedFile = $this->getUploadFile($entity, $field);
+		return $uploadedFile !== null && $uploadedFile->getError() === 0;
+	}
+
+	protected function getUploadFile(EntityInterface $entity, string $field): UploadedFile {
+		$field_file = Text::suffix($field, self::fieldFileSuffix);
+		return  $entity->get($field_file);
+	}
+
+	protected function saveFile(EntityInterface $entity, string $field): void {
+		$field_file = Text::suffix($field, self::fieldFileSuffix);
+		$uploadedFile = $entity->get($field_file);
+		if (!$entity->isNew()) {
+			$this->deleteFiles($entity, $field);
+		}
+		$pathBuilder = $this->getPathBuilder($field, $uploadedFile->getClientFilename());
+		$entity->set([
+			$field => $pathBuilder->filename(),
+			Text::suffix($field, 'path') => $pathBuilder->dir(),
+		]);
+		$this->moveUploadedFile($uploadedFile, $pathBuilder->absolutePath());
+		$this->createThumbnails($pathBuilder, $field);
+	}
+
+	protected function moveUploadedFile(UploadedFile $uploadedFile, string $absolutePath): void {
 		FilenameHandler::applyNumericSuffix($absolutePath);
 		new Folder(pathinfo($absolutePath, PATHINFO_DIRNAME), true, 775);
 		$uploadedFile->moveTo($absolutePath);
 	}
 
-	private function createThumbnails(PathBuilder $pathBuilder, string $field): void {
+	protected function createThumbnails(PathBuilder $pathBuilder, string $field): void {
 		$thumbnailConfig = $this->getFieldConfig($field, 'thumbnails');
 		foreach ($thumbnailConfig as $thumbnailDirname => $config) {
 			$config = array_merge(['width' => null, 'height' => null], $config);
@@ -107,7 +141,7 @@ class ImageUploadBehavior extends Behavior {
 		}
 	}
 
-	private function deleteFiles(EntityInterface $entity, string $field) {
+	protected function deleteFiles(EntityInterface $entity, string $field): void {
 		$pathField = Text::suffix($field, 'path');
 		$dir = $entity->$pathField;
 		$filename = $entity->$field;
@@ -122,15 +156,15 @@ class ImageUploadBehavior extends Behavior {
 		});
 	}
 
-	private function getFieldList() {
+	protected function getFieldList(): array {
 		return array_keys($this->getConfig(null, []));
 	}
 
-	private function getFieldConfig($field, $key, $default = null) {
+	protected function getFieldConfig($field, $key, $default = null) {
 		return $this->getConfig(sprintf('%s.%s', $field, $key), $default);
 	}
 
-	private function getPathBuilder(string $field, string $filename): PathBuilder {
+	protected function getPathBuilder(string $field, string $filename): PathBuilder {
 		return PathBuilder::getInstance(
 			$field,
 			$filename,
