@@ -75,8 +75,9 @@ class ImageUploadBehavior extends Behavior {
 	}
 
 	private function saveFile(EntityInterface $entity, string $field) {
-		$uploadedFile = $entity->get(Text::suffix($field, self::fieldFileSuffix));
-		if ($uploadedFile->getError() === 0) {
+		$field_file = Text::suffix($field, self::fieldFileSuffix);
+		$uploadedFile = $entity->get($field_file);
+		if ($entity->isDirty($field_file) && $uploadedFile->getError() === 0) {
 			if (!$entity->isNew()) {
 				$this->deleteFiles($entity, $field);
 			}
