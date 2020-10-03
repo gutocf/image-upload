@@ -105,7 +105,7 @@ class ImageUploadBehavior extends Behavior {
 		return $uploadedFile !== null && $uploadedFile->getError() === 0;
 	}
 
-	protected function getUploadFile(EntityInterface $entity, string $field): UploadedFile {
+	protected function getUploadFile(EntityInterface $entity, string $field): ?UploadedFile {
 		$field_file = Text::suffix($field, self::fieldFileSuffix);
 		return  $entity->get($field_file);
 	}
