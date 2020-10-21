@@ -10,7 +10,8 @@ use Imagine\Image\ImageInterface;
 /**
  * @property ImageResizer $this->imageProcessor
  * @property Imagine $imagine
- * @property ImageInterface $images
+ * @property ImageInterface $imageLandscape
+ * @property ImageInterface $imagePortrait
  */
 class ImageResizerTest extends TestCase {
 
@@ -18,51 +19,97 @@ class ImageResizerTest extends TestCase {
 
 	private $Imagine;
 
-	private $image;
+	private $imageLandscape;
+
+	private $imagePortrait;
 
 	public function setUp(): void {
 		parent::setUp();
 		$this->ImageResizer = new ImageResizer();
 		$this->Imagine = new Imagine();
-		$this->image = $this->Imagine->open(TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'Resizer' . DS . 'image_resizer_test.png');
+		$this->imageLandscape = $this->Imagine->open(TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'Resizer' . DS . 'image_landscape.png');
+		$this->imagePortrait = $this->Imagine->open(TEST_ROOT . 'tests' . DS . 'TestCase' . DS . 'Lib' . DS . 'Resizer' . DS . 'image_portrait.png');
 	}
 
-	public function testResizeByWidth(): void {
-		$imageRatio = $this->image->getSize()->getWidth() / $this->image->getSize()->getHeight();
-		$resize = $this->ImageResizer->resizeByWidth($this->image, 100);
+	public function testResizeByWidthLandscape(): void {
+		$imageRatio = $this->imageLandscape->getSize()->getWidth() / $this->imageLandscape->getSize()->getHeight();
+		$resize = $this->ImageResizer->resizeByWidth($this->imageLandscape, 100);
 		$this->assertEquals(100, $resize->getSize()->getWidth());
 		$this->assertEquals(round(100 / $imageRatio), $resize->getSize()->getHeight());
 	}
 
-	public function testResizeByHeigth(): void {
-		$imageRatio = $this->image->getSize()->getWidth() / $this->image->getSize()->getHeight();
-		$resize = $this->ImageResizer->resizeByHeight($this->image, 100);
+	public function testResizeByHeigthLandscape(): void {
+		$imageRatio = $this->imageLandscape->getSize()->getWidth() / $this->imageLandscape->getSize()->getHeight();
+		$resize = $this->ImageResizer->resizeByHeight($this->imageLandscape, 100);
 		$this->assertEquals(round(100 * $imageRatio), $resize->getSize()->getWidth());
 		$this->assertEquals(100, $resize->getSize()->getHeight());
 	}
 
-	public function testCrop(): void {
-		$crop = $this->ImageResizer->crop($this->image, 200, 200);
+	public function testCropLandscape(): void {
+		$crop = $this->ImageResizer->crop($this->imageLandscape, 200, 200);
+		$crop->save('d:\landscape.png');
 		$this->assertEquals(200, $crop->getSize()->getWidth());
 		$this->assertEquals(200, $crop->getSize()->getHeight());
 	}
 
-	public function testResizeWidth(): void {
-		$imageRatio = $this->image->getSize()->getWidth() / $this->image->getSize()->getHeight();
-		$resize = $this->ImageResizer->resize($this->image, 100);
+	public function testResizeWidthLandscape(): void {
+		$imageRatio = $this->imageLandscape->getSize()->getWidth() / $this->imageLandscape->getSize()->getHeight();
+		$resize = $this->ImageResizer->resize($this->imageLandscape, 100);
 		$this->assertEquals(100, $resize->getSize()->getWidth());
 		$this->assertEquals(round(100 / $imageRatio), $resize->getSize()->getHeight());
 	}
 
-	public function testResizeHeigth(): void {
-		$imageRatio = $this->image->getSize()->getWidth() / $this->image->getSize()->getHeight();
-		$resize = $this->ImageResizer->resize($this->image, null, 100);
+	public function testResizeHeigthLandscape(): void {
+		$imageRatio = $this->imageLandscape->getSize()->getWidth() / $this->imageLandscape->getSize()->getHeight();
+		$resize = $this->ImageResizer->resize($this->imageLandscape, null, 100);
 		$this->assertEquals(round(100 * $imageRatio), $resize->getSize()->getWidth());
 		$this->assertEquals(100, $resize->getSize()->getHeight());
 	}
 
-	public function testResizeCropCenter(): void {
-		$crop = $this->ImageResizer->resize($this->image, 200, 200);
+	public function testResizeCropCenterLandscape(): void {
+		$crop = $this->ImageResizer->resize($this->imageLandscape, 200, 200);
+		$this->assertEquals(200, $crop->getSize()->getWidth());
+		$this->assertEquals(200, $crop->getSize()->getHeight());
+	}
+
+
+	public function testResizeByWidthPortrait(): void {
+		$imageRatio = $this->imagePortrait->getSize()->getWidth() / $this->imagePortrait->getSize()->getHeight();
+		$resize = $this->ImageResizer->resizeByWidth($this->imagePortrait, 100);
+		$this->assertEquals(100, $resize->getSize()->getWidth());
+		$this->assertEquals(round(100 / $imageRatio), $resize->getSize()->getHeight());
+	}
+
+	public function testResizeByHeigthPortrait(): void {
+		$imageRatio = $this->imagePortrait->getSize()->getWidth() / $this->imagePortrait->getSize()->getHeight();
+		$resize = $this->ImageResizer->resizeByHeight($this->imagePortrait, 100);
+		$this->assertEquals(round(100 * $imageRatio), $resize->getSize()->getWidth());
+		$this->assertEquals(100, $resize->getSize()->getHeight());
+	}
+
+	public function testCropPortrait(): void {
+		$crop = $this->ImageResizer->crop($this->imagePortrait, 200, 200);
+		$crop->save('d:\portrait.png');
+		$this->assertEquals(200, $crop->getSize()->getWidth());
+		$this->assertEquals(200, $crop->getSize()->getHeight());
+	}
+
+	public function testResizeWidthPortrait(): void {
+		$imageRatio = $this->imagePortrait->getSize()->getWidth() / $this->imagePortrait->getSize()->getHeight();
+		$resize = $this->ImageResizer->resize($this->imagePortrait, 100);
+		$this->assertEquals(100, $resize->getSize()->getWidth());
+		$this->assertEquals(round(100 / $imageRatio), $resize->getSize()->getHeight());
+	}
+
+	public function testResizeHeigthPortrait(): void {
+		$imageRatio = $this->imagePortrait->getSize()->getWidth() / $this->imagePortrait->getSize()->getHeight();
+		$resize = $this->ImageResizer->resize($this->imagePortrait, null, 100);
+		$this->assertEquals(round(100 * $imageRatio), $resize->getSize()->getWidth());
+		$this->assertEquals(100, $resize->getSize()->getHeight());
+	}
+
+	public function testResizeCropCenterPortrait(): void {
+		$crop = $this->ImageResizer->resize($this->imagePortrait, 200, 200);
 		$this->assertEquals(200, $crop->getSize()->getWidth());
 		$this->assertEquals(200, $crop->getSize()->getHeight());
 	}
