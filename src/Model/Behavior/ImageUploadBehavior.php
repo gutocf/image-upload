@@ -67,12 +67,10 @@ class ImageUploadBehavior extends Behavior
 	public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options)
 	{
 		foreach ($this->getFields() as $field) {
-			if (!$entity->isDirty($field)) {
-				break;
-			}
 
 			/** @var UploadedFile $uploadedFile */
 			$uploadedFile = $entity->get($field);
+			$entity->set($field, $entity->getOriginal($field));
 
 			if ($this->isMarkedForDeletion($entity, $field)) {
 				$this->deleteFiles($entity, $field);
@@ -120,7 +118,9 @@ class ImageUploadBehavior extends Behavior
 	public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options)
 	{
 		foreach ($this->getFields() as $field) {
-			$this->deleteFiles($entity, $field);
+			if ($entity->getOriginal($field) !== null) {
+				$this->deleteFiles($entity, $field);
+			}
 		}
 	}
 
