@@ -2,174 +2,206 @@
 
 namespace Gutocf\ImageUpload\Model\Behavior;
 
-use Gutocf\ImageUpload\Lib\Filename\FilenameHandler;
-use Gutocf\ImageUpload\Lib\Filename\PathBuilder;
-use Gutocf\ImageUpload\Lib\Filename\PathProcessor;
-use Gutocf\ImageUpload\Lib\Resizer\ImageResizer;
-use Gutocf\ImageUpload\Lib\Utils\Text;
-use Gutocf\ImageUpload\Lib\Validator\ImageValidator;
 use ArrayObject;
-use Cake\Datasource\EntityInterface;
-use Cake\Event\EventInterface;
-use Cake\Filesystem\Folder;
 use Cake\ORM\Behavior;
+use Cake\Event\EventInterface;
 use Cake\Validation\Validator;
 use Laminas\Diactoros\UploadedFile;
-use const WWW_ROOT;
+use Cake\Datasource\EntityInterface;
+use Gutocf\ImageUpload\Lib\Utils\Text;
+use Gutocf\ImageUpload\Lib\Filename\Filename;
+use Gutocf\ImageUpload\Lib\Filename\TokenProcessor;
+use Gutocf\ImageUpload\Lib\Resizer\ImageResizer;
+use Gutocf\ImageUpload\Lib\Writer\DefaultWriter;
+use Gutocf\ImageUpload\Lib\Writer\WriterInterface;
+use Gutocf\ImageUpload\Lib\Validator\ImageValidator;
+use Manager\Model\Entity\User;
+use PhpParser\Node\Name\Relative;
+use Psr\Http\Message\UploadedFileInterface;
 
 /**
- * @property ImageResizer $ImageResizer
  * @property ImageValidator $ImageValidator
  */
-class ImageUploadBehavior extends Behavior {
+class ImageUploadBehavior extends Behavior
+{
 
-	protected $_defaultConfigField = [
-		'baseDir' => WWW_ROOT,
-		'dir' => 'img',
-		'filename' => '{slug}.{ext}',
+	protected $_defaultFieldConfig = [
+		'base_dir' => null,
+		'filename' => '{img}{DS}{model}{DS}{filename}.{ext}',
 		'optional' => false,
-		'extensions' => ['jpg', 'png'],
+		'extensions' => ['jpg', 'png', 'webp', 'jpeg'],
 		'maxSize' => null,
 		'thumbnails' => [],
+		'writer' => null,
 	];
 
-	protected const fieldFileSuffix = 'file';
+	protected $_defaultThumbnailConfig = [
+		'filename' => '{img}{DS}{model}{DS}{thumb}{DS}{filename}.{ext}',
+		'width' => 0,
+		'height' => 0,
+	];
 
-	protected const fieldRemoveSuffix = 'remove';
+	protected const FIELD_REMOVE_SUFFIX = 'remove';
 
-	protected $ImageValidator;
-
-	protected $ImageResizer;
-
-	public function initialize(array $config): void {
-		foreach (array_keys($config) as $field) {
-			if (is_int($field)) {
-				$this->setConfig($config[$field], $this->_defaultConfigField);
-				$this->_configDelete($field);
-			} else {
-				$this->setConfig($field, array_merge($this->_defaultConfigField, $config[$field]), false);
-			}
+	public function initialize(array $config): void
+	{
+		parent::initialize($config);
+		$schema = $this->table()->getSchema();
+		foreach ($config as $field => $config) {
+			$this->setConfig($field, array_merge($this->_defaultFieldConfig, $config), false);
+			$schema->setColumnType($field, 'Gutocf/ImageUpload.file');
 		}
-		$this->ImageResizer = new ImageResizer();
 	}
 
-	public function buildValidator(EventInterface $event, Validator $validator, $name) {
-		if ($name == 'default') {
-			$this->ImageValidator = new ImageValidator($validator);
-			foreach ($this->getFieldList() as $field) {
+	public function buildValidator(EventInterface $event, Validator $validator, $name)
+	{
+		if ($name === 'default') {
+			$imageValidator = new ImageValidator($validator);
+			foreach ($this->getFields() as $field) {
 				$config = $this->getConfig($field);
-				$_field = Text::suffix($field, self::fieldFileSuffix);
-				$this->ImageValidator->addRules($_field, $config);
+				$imageValidator->addRules($field, $config);
 			}
 		}
 	}
 
-	public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options) {
-		foreach ($this->getFieldList() as $field) {
-			$this->saveOrRemoveFiles($entity, $field);
+	public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options)
+	{
+		foreach ($this->getFields() as $field) {
+			if (!$entity->isDirty($field)) {
+				break;
+			}
+
+			/** @var UploadedFile $uploadedFile */
+			$uploadedFile = $entity->get($field);
+
+			if ($this->isMarkedForDeletion($entity, $field)) {
+				$this->deleteFiles($entity, $field);
+				$entity->$field = null;
+			}
+
+			if (!$uploadedFile instanceof UploadedFileInterface) {
+				continue;
+			}
+
+			if ($uploadedFile->getError() === UPLOAD_ERR_NO_FILE) {
+				continue;
+			}
+
+			if ($uploadedFile->getError() !== UPLOAD_ERR_OK) {
+				$entity->set($field, $entity->getOriginal($field));
+				$entity->setError($field, 'File upload error', true);
+				continue;
+			}
+
+			if (!$entity->isNew() && $entity->getOriginal($field) !== null) {
+				$this->deleteFiles($entity, $field);
+			}
+
+			$base_dir = $this->getFieldConfig($field, 'base_dir');
+			$relative_path = TokenProcessor::getInstance()
+				->setModelAlias($this->table()->getAlias())
+				->setField($field)
+				->setFilename($uploadedFile->getClientFilename())
+				->replace($this->getFieldConfig($field, 'filename'));
+			$filename = new Filename($relative_path, $base_dir);
+
+			$writer = $this->getWriter($field);
+			while ($writer->exists($filename->getAbsolutePath())) {
+				$filename->incNumericSuffix();
+			}
+			$writer->write($filename->getAbsolutePath(), $uploadedFile->getStream());
+
+			$entity->set($field, $filename->getRelativePath());
+
+			$this->processThumbnails($field, $filename, $writer);
 		}
 	}
 
-	public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options) {
-		foreach ($this->getFieldList() as $field) {
+	public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options)
+	{
+		foreach ($this->getFields() as $field) {
 			$this->deleteFiles($entity, $field);
 		}
 	}
 
-	protected function saveOrRemoveFiles(EntityInterface $entity, string $field) {
-		if ($this->hasUploadedFile($entity, $field)) {
-			$this->saveFile($entity, $field);
-		} elseif ($this->isMarkedForRemoval($entity, $field)) {
-			$this->removeFile($entity, $field);
+	protected function processThumbnails(string $field, Filename $original, WriterInterface $writer): void
+	{
+		foreach ($this->getFieldConfig($field, 'thumbnails', []) as $prefix => $config) {
+
+			$base_dir = $this->getFieldConfig($field, 'base_dir');
+			$relative_path = TokenProcessor::getInstance()
+				->setModelAlias($this->table()->getAlias())
+				->setField($field)
+				->setFilename($original->getBasename())
+				->setReplacement('thumb', $prefix)
+				->replace($config['filename']);
+			$thumb_filename = new Filename($relative_path, $base_dir);
+
+			$writer->write(
+				$thumb_filename->getAbsolutePath(),
+				ImageResizer::getInstance()
+					->createThumbnail(
+						$original->getAbsolutePath(),
+						$thumb_filename->getExtension(),
+						$config['width'],
+						$config['height']
+					)
+			);
 		}
 	}
 
-	private function removeFile(EntityInterface $entity, string $field) {
-		$field_file = Text::suffix($field, self::fieldFileSuffix);
-		$field_path = Text::suffix($field, 'path');
-		$this->deleteFiles($entity, $field);
-		$entity->set([
-			$field => null,
-			$field_file => null,
-			$field_path => null,
-		]);
+	protected function getWriter($field): WriterInterface
+	{
+		$writer_class = $this->getFieldConfig($field, 'writer', DefaultWriter::class);
+		return new $writer_class;
 	}
 
-	protected function isMarkedForRemoval(EntityInterface $entity, string $field): bool {
-		$field_delete = Text::suffix($field, self::fieldRemoveSuffix);
+	protected function isMarkedForDeletion(EntityInterface $entity, string $field): bool
+	{
+		$field_delete = Text::suffix($field, self::FIELD_REMOVE_SUFFIX);
 		return isset($entity->$field_delete) && $entity->$field_delete;
 	}
 
-	protected function hasUploadedFile(EntityInterface $entity, string $field): bool {
-		$uploadedFile = $this->getUploadFile($entity, $field);
-		return $uploadedFile !== null && $uploadedFile->getError() === 0;
-	}
+	protected function deleteFiles(EntityInterface $entity, string $field): void
+	{
+		$base_dir = $this->getFieldConfig($field, 'base_dir');
+		$relative_path = $entity->getOriginal($field);
+		$filename = new Filename($relative_path, $base_dir);
 
-	protected function getUploadFile(EntityInterface $entity, string $field): ?UploadedFile {
-		$field_file = Text::suffix($field, self::fieldFileSuffix);
-		return  $entity->get($field_file);
-	}
+		$filesToDelete = [$filename->getAbsolutePath()];
 
-	protected function saveFile(EntityInterface $entity, string $field): void {
-		$field_file = Text::suffix($field, self::fieldFileSuffix);
-		$uploadedFile = $entity->get($field_file);
-		if (!$entity->isNew()) {
-			$this->deleteFiles($entity, $field);
+		TokenProcessor::getInstance()
+			->setModelAlias($this->table()->getAlias())
+			->setField($field)
+			->setFilename($filename->getBasename());
+
+		foreach ($this->getFieldConfig($field, 'thumbnails', []) as $thumb => $config) {
+			$relative_path = TokenProcessor::getInstance()
+				->setReplacement('thumb', $thumb)
+				->replace($config['filename']);
+			$filename = new Filename($relative_path, $base_dir);
+			$filesToDelete[] = $filename->getAbsolutePath();
 		}
-		$pathBuilder = $this->getPathBuilder($field, $uploadedFile->getClientFilename());
-		$entity->set([
-			$field => $pathBuilder->filename(),
-			Text::suffix($field, 'path') => $pathBuilder->dir(),
-		]);
-		$this->moveUploadedFile($uploadedFile, $pathBuilder->absolutePath());
-		$this->createThumbnails($pathBuilder, $field);
-	}
 
-	protected function moveUploadedFile(UploadedFile $uploadedFile, string $absolutePath): void {
-		FilenameHandler::applyNumericSuffix($absolutePath);
-		new Folder(pathinfo($absolutePath, PATHINFO_DIRNAME), true, 775);
-		$uploadedFile->moveTo($absolutePath);
-	}
-
-	protected function createThumbnails(PathBuilder $pathBuilder, string $field): void {
-		$thumbnailConfig = $this->getFieldConfig($field, 'thumbnails');
-		foreach ($thumbnailConfig as $thumbnailDirname => $config) {
-			$config = array_merge(['width' => null, 'height' => null], $config);
-			$absolutePath = $pathBuilder->absolutePath();
-			$thumbnailPath = $pathBuilder->thumbnailAbsolutePath($thumbnailDirname);
-			$this->ImageResizer->createThumbnail($absolutePath, $thumbnailPath, $config['width'], $config['height']);
-		}
-	}
-
-	protected function deleteFiles(EntityInterface $entity, string $field): void {
-		$pathField = Text::suffix($field, 'path');
-		$dir = $entity->$pathField;
-		$filename = $entity->$field;
-		$filesToDelete = [
-			PathProcessor::join($this->getFieldConfig($field, 'baseDir'), $dir, $filename)
-		];
-		foreach ($this->getFieldConfig($field, 'thumbnails') as $folder => $config) {
-			$filesToDelete[] = PathProcessor::join($this->getFieldConfig($field, 'baseDir'), $dir, $folder, $filename);
-		}
-		array_filter($filesToDelete, function ($file) {
-			@unlink($file);
+		$writer = $this->getWriter($field);
+		collection($filesToDelete)->each(function ($file) use ($writer) {
+			$writer->delete($file);
 		});
 	}
 
-	protected function getFieldList(): array {
+	/**
+	 * Returns the fields names collection
+	 */
+	protected function getFields(): array
+	{
 		return array_keys($this->getConfig(null, []));
 	}
 
-	protected function getFieldConfig($field, $key, $default = null) {
+	/**
+	 * Returns de configuration array for a field
+	 */
+	protected function getFieldConfig($field, $key, $default = null)
+	{
 		return $this->getConfig(sprintf('%s.%s', $field, $key), $default);
-	}
-
-	protected function getPathBuilder(string $field, string $filename): PathBuilder {
-		return PathBuilder::getInstance(
-			$field,
-			$filename,
-			$this->getTable()->getAlias(),
-			$this->getConfig($field)
-		);
 	}
 }

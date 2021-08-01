@@ -8,22 +8,43 @@ use Imagine\Image\Box;
 use Imagine\Image\ImageInterface;
 use Imagine\Image\Point;
 use InvalidArgumentException;
+use Laminas\Diactoros\UploadedFile;
+use Psr\Http\Message\StreamInterface;
 
-class ImageResizer {
+/**
+ * @property ImageResizer $instance
+ * @property Imagine $Imagine
+ */
+class ImageResizer
+{
+
+	private static $instance;
 
 	private $Imagine;
 
-	public function __construct() {
+	private function __construct()
+	{
 		$this->Imagine = new Imagine();
 	}
 
-	public function createThumbnail(string $sourcePath, string $thumbnailPath, int $width = null, int $height = null): void {
-		$source = $this->open($sourcePath);
-		$thumbnail = $this->resize($source, $width, $height);
-		$this->save($thumbnail, $thumbnailPath);
+	public static function getInstance(): self
+	{
+		if (self::$instance === null) {
+			self::$instance = new ImageResizer();
+		}
+		return self::$instance;
 	}
 
-	public function resize(ImageInterface $image, int $width = null, int $height = null): ImageInterface {
+	public function createThumbnail(string $source_file, string $format = 'png', int $width = null, int $height = null)
+	{
+		$image = $this->Imagine->open($source_file);
+		return $this
+			->resize($image, $width, $height)
+			->get($format);
+	}
+
+	public function resize(ImageInterface $image, int $width = null, int $height = null): ImageInterface
+	{
 		switch (true) {
 			case !is_null($width) && !is_null($height):
 				return $this->crop($image, $width, $height);
@@ -36,7 +57,8 @@ class ImageResizer {
 		}
 	}
 
-	public function crop(ImageInterface $image, int $width, int $height): ImageInterface {
+	public function crop(ImageInterface $image, int $width, int $height): ImageInterface
+	{
 		$boxCrop = new Box($width, $height);
 		$imageRatio = $image->getSize()->getWidth() / $image->getSize()->getHeight();
 		$thumbRatio = $boxCrop->getWidth() / $boxCrop->getHeight();
@@ -54,21 +76,18 @@ class ImageResizer {
 			->crop($start, $boxCrop);
 	}
 
-	public function resizeByHeight(ImageInterface $image, int $height): ImageInterface {
+	public function resizeByHeight(ImageInterface $image, int $height): ImageInterface
+	{
 		return $image->resize($image->getSize()->heighten($height));
 	}
 
-	public function resizeByWidth(ImageInterface $image, int $width): ImageInterface {
+	public function resizeByWidth(ImageInterface $image, int $width): ImageInterface
+	{
 		return $image->resize($image->getSize()->widen($width));
 	}
 
-	public function open(string $path): ImageInterface {
+	public function open(string $path): ImageInterface
+	{
 		return $this->Imagine->open($path);
-	}
-
-	public function save(ImageInterface $image, string $path): ImageInterface {
-		$dirname = pathinfo($path, PATHINFO_DIRNAME);
-		new Folder($dirname, 775, true);
-		return $image->save($path);
 	}
 }

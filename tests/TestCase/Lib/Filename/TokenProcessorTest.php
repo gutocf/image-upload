@@ -8,17 +8,62 @@ use Gutocf\ImageUpload\Lib\Filename\TokenProcessor;
 /**
  * @property TokenProcessor $TokenProcessor
  */
-class TokenProcessorTest extends TestCase {
+class TokenProcessorTest extends TestCase
+{
 
 	private $TokenProcessor;
 
-	public function setUp(): void {
+	public function setUp(): void
+	{
 		parent::setUp();
-		$this->TokenProcessor = new TokenProcessor('TableName', 'fieldname', 'Praia Florianópolis.png');
 	}
 
-	public function testReplace() {
-		$this->assertEquals('tablename' . DS . date('Y') . DS . date('m') . DS . date('d'), $this->TokenProcessor->replace('{model}{DS}{year}{DS}{month}{DS}{day}'));
-		$this->assertEquals('praia-florianopolis.png', $this->TokenProcessor->replace('{slug}.{ext}'));
+	public function testReplaceDate()
+	{
+		$expected = date('Y-m-d');
+		$actual = TokenProcessor::getInstance()
+			->replace('{year}-{month}-{day}');
+		$this->assertEquals($expected, $actual);
+	}
+
+	public function testReplaceTimestamp()
+	{
+		$expected = time();
+		$actual = TokenProcessor::getInstance()
+			->setReplacement('time', $expected)
+			->replace('{time}');
+		$this->assertEquals($expected, $actual);
+	}
+
+	public function testReplaceDS()
+	{
+		$expected = DS;
+		$actual = TokenProcessor::getInstance()
+			->replace('{DS}');
+		$this->assertEquals($expected, $actual);
+
+		$expected = '-';
+		$actual = TokenProcessor::getInstance()
+			->setReplacement('DS', '-')
+			->replace('{DS}');
+		$this->assertEquals($expected, $actual);
+	}
+
+	public function testReplaceModelAlias()
+	{
+		$expected = 'tablename';
+		$actual = TokenProcessor::getInstance()
+			->setModelAlias('Tablename')
+			->replace('{model}');
+		$this->assertEquals($expected, $actual);
+	}
+
+	public function testReplaceFilename()
+	{
+		$expected = 'praia-florianopolis.png';
+		$actual = TokenProcessor::getInstance()
+			->setFilename('Praia Florianópolis.PNG')
+			->replace('{filename}.{ext}');
+		$this->assertEquals($expected, $actual);
 	}
 }
