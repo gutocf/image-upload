@@ -51,9 +51,9 @@ class TokenProcessorTest extends TestCase
 
 	public function testReplaceModelAlias()
 	{
-		$expected = 'tablename';
+		$expected = 'model-table-alias';
 		$actual = TokenProcessor::getInstance()
-			->setModelAlias('Tablename')
+			->setModelAlias('ModelTableAlias')
 			->replace('{model}');
 		$this->assertEquals($expected, $actual);
 	}

@@ -3,6 +3,8 @@
 namespace Gutocf\ImageUpload\Lib\Filename;
 
 use const DS;
+
+use Cake\Utility\Inflector;
 use Cake\Utility\Text;
 
 /**
@@ -45,7 +47,7 @@ class TokenProcessor
 
 	public function setModelAlias(string $model_alias): self
 	{
-		return $this->setReplacement('model', strtolower(Text::slug($model_alias)));
+		return $this->setReplacement('model', strtolower(Inflector::dasherize($model_alias)));
 	}
 
 	public function setField(string $field): self
