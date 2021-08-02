@@ -37,8 +37,8 @@ class ImageUploadBehavior extends Behavior
 
 	protected $_defaultThumbnailConfig = [
 		'filename' => '{img}{DS}{model}{DS}{thumb}{DS}{filename}.{ext}',
-		'width' => 0,
-		'height' => 0,
+		'width' => null,
+		'height' => null,
 	];
 
 	protected const FIELD_REMOVE_SUFFIX = 'remove';
@@ -48,6 +48,11 @@ class ImageUploadBehavior extends Behavior
 		parent::initialize($config);
 		$schema = $this->table()->getSchema();
 		foreach ($config as $field => $config) {
+			if (isset($config['thumbnails'])) {
+				foreach ($config['thumbnails'] as $i => $thumbnail_config) {
+					$config['thumbnails'][$i] = array_merge($this->_defaultThumbnailConfig, $thumbnail_config);
+				}
+			}
 			$this->setConfig($field, array_merge($this->_defaultFieldConfig, $config), false);
 			$schema->setColumnType($field, 'Gutocf/ImageUpload.file');
 		}
@@ -127,7 +132,6 @@ class ImageUploadBehavior extends Behavior
 	protected function processThumbnails(string $field, Filename $original, WriterInterface $writer): void
 	{
 		foreach ($this->getFieldConfig($field, 'thumbnails', []) as $prefix => $config) {
-
 			$base_dir = $this->getFieldConfig($field, 'base_dir');
 			$relative_path = TokenProcessor::getInstance()
 				->setModelAlias($this->table()->getAlias())
