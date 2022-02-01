@@ -4,6 +4,7 @@
 /config/.env
 /logs/*
 /tmp/*
+!/tmp/.gitkeep
 /vendor/*
 
 # OS generated files #
