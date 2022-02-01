@@ -49,7 +49,7 @@ class ImageResizerTest extends TestCase
 	public function testCropLandscape(): void
 	{
 		$crop = ImageResizer::getInstance()->crop($this->imageLandscape, 200, 200);
-		$crop->save('d:\landscape.png');
+		$crop->save(TEST_ROOT . 'tmp' . DS . 'landscape.png');
 		$this->assertEquals(200, $crop->getSize()->getWidth());
 		$this->assertEquals(200, $crop->getSize()->getHeight());
 	}
@@ -97,7 +97,7 @@ class ImageResizerTest extends TestCase
 	public function testCropPortrait(): void
 	{
 		$crop = ImageResizer::getInstance()->crop($this->imagePortrait, 200, 200);
-		$crop->save('d:\portrait.png');
+		$crop->save(TEST_ROOT . 'tmp' . DS . 'portrait.png');
 		$this->assertEquals(200, $crop->getSize()->getWidth());
 		$this->assertEquals(200, $crop->getSize()->getHeight());
 	}
