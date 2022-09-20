@@ -1,0 +1,21 @@
+<phpunit bootstrap="tests/bootstrap.php">
+    <testsuites>
+        <testsuite name="AllTests">
+            <directory>./tests</directory>
+        </testsuite>
+        <testsuite name="Filename">
+            <directory>./tests/TestCase/Lib/Filename</directory>
+        </testsuite>
+        <testsuite name="Resizer">
+            <directory>./tests/TestCase/Lib/Resizer</directory>
+        </testsuite>
+        <testsuite name="Utils">
+            <directory>./tests/TestCase/Lib/Utils</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </coverage>
+</phpunit>

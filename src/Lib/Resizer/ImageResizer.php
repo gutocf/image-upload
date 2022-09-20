@@ -65,11 +65,11 @@ class ImageResizer
 		if ($imageRatio >= $thumbRatio) {
 			$resizeW = round($height * $imageRatio);
 			$resizeH = $height;
-			$start = new Point(($resizeW - $width) / 2, 0);
+			$start = new Point(intval(($resizeW - $width) / 2), 0);
 		} else {
 			$resizeW = $width;
 			$resizeH = round($height / $imageRatio);
-			$start = new Point(0, ($resizeH - $height) / 2);
+			$start = new Point(0, intval(($resizeH - $height) / 2));
 		}
 		$boxResize = new Box($resizeW, $resizeH);
 		return $image->resize($boxResize)
